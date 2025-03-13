@@ -49,6 +49,12 @@
             font-size: 16px;
         }
 
+        input[list] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
         button {
             background: var(--primary-color);
             color: white;
@@ -289,11 +295,9 @@
         let editingMatchIndex = -1;
         let editingPlayerIndex = -1;
 
-        // Initialize data structure
         if (!tournamentData.players) tournamentData.players = [];
         if (!tournamentData.matches) tournamentData.matches = [];
 
-        // Player Management
         function addPlayer() {
             const firstName = document.getElementById('firstName').value.trim();
             const lastName = document.getElementById('lastName').value.trim();
@@ -438,7 +442,6 @@
             document.getElementById('email').value = '';
         }
 
-        // Match Management
         function addMatch() {
             if (unsavedMatchExists) {
                 alert('Please save or cancel the current match before creating a new one!');
@@ -451,13 +454,13 @@
             matchDiv.innerHTML = `
                 <h3>${matchDate}</h3>
                 <div class="input-group">
-                    <input type="text" list="playerList" placeholder="Player 1" class="p1">
-                    <input type="text" list="playerList" placeholder="Player 2" class="p2">
+                    <input type="text" list="playerList" placeholder="First Last" class="p1" autocomplete="off">
+                    <input type="text" list="playerList" placeholder="First Last" class="p2" autocomplete="off">
                 </div>
                 <div class="vs">vs</div>
                 <div class="input-group">
-                    <input type="text" list="playerList" placeholder="Player 3" class="p3">
-                    <input type="text" list="playerList" placeholder="Player 4" class="p4">
+                    <input type="text" list="playerList" placeholder="First Last" class="p3" autocomplete="off">
+                    <input type="text" list="playerList" placeholder="First Last" class="p4" autocomplete="off">
                 </div>
                 <div class="input-group">
                     <input type="number" placeholder="Team 1 Score" class="score1">
@@ -487,13 +490,11 @@
             const scores = Array.from(inputs).slice(4,6).map(i => parseInt(i.value));
 
             const playersInMatch = playerValues.map(value => {
-                const parts = value.split(' ');
-                if (parts.length === 1) {
-                    const matches = tournamentData.players.filter(p => p.firstName === value);
-                    return matches.length === 1 ? matches[0] : null;
-                }
+                const [firstName, ...lastNameParts] = value.split(' ');
+                const lastName = lastNameParts.join(' ');
                 return tournamentData.players.find(p => 
-                    p.firstName === parts[0] && p.lastName === parts.slice(1).join(' ')
+                    p.firstName === firstName && 
+                    p.lastName === lastName
                 );
             });
 
@@ -623,17 +624,17 @@
             matchDiv.innerHTML = `
                 <h3>${match.date}</h3>
                 <div class="input-group">
-                    <input type="text" list="playerList" placeholder="Player 1" class="p1" 
-                        value="${getPlayerDisplayName(match.team1[0])}">
-                    <input type="text" list="playerList" placeholder="Player 2" class="p2" 
-                        value="${getPlayerDisplayName(match.team1[1])}">
+                    <input type="text" list="playerList" placeholder="First Last" class="p1" autocomplete="off"
+                        value="${match.team1[0].firstName} ${match.team1[0].lastName}">
+                    <input type="text" list="playerList" placeholder="First Last" class="p2" autocomplete="off"
+                        value="${match.team1[1].firstName} ${match.team1[1].lastName}">
                 </div>
                 <div class="vs">vs</div>
                 <div class="input-group">
-                    <input type="text" list="playerList" placeholder="Player 3" class="p3" 
-                        value="${getPlayerDisplayName(match.team2[0])}">
-                    <input type="text" list="playerList" placeholder="Player 4" class="p4" 
-                        value="${getPlayerDisplayName(match.team2[1])}">
+                    <input type="text" list="playerList" placeholder="First Last" class="p3" autocomplete="off"
+                        value="${match.team2[0].firstName} ${match.team2[0].lastName}">
+                    <input type="text" list="playerList" placeholder="First Last" class="p4" autocomplete="off"
+                        value="${match.team2[1].firstName} ${match.team2[1].lastName}">
                 </div>
                 <div class="input-group">
                     <input type="number" placeholder="Team 1 Score" class="score1" value="${match.scores.team1}">
@@ -658,30 +659,19 @@
             }
         }
 
-        function getPlayerDisplayName(player) {
-            const firstNameCount = tournamentData.players.filter(p => p.firstName === player.firstName).length;
-            return firstNameCount > 1 ? `${player.firstName} ${player.lastName}` : player.firstName;
-        }
-
         function rebuildDatalist() {
             const datalist = document.getElementById('playerList');
             datalist.innerHTML = '';
             
-            const firstNameCount = {};
-            tournamentData.players.forEach(p => {
-                firstNameCount[p.firstName] = (firstNameCount[p.firstName] || 0) + 1;
-            });
-
             tournamentData.players.forEach(p => {
                 const option = document.createElement('option');
-                option.value = firstNameCount[p.firstName] > 1 ? 
-                    `${p.firstName} ${p.lastName}` : p.firstName;
+                option.value = `${p.firstName} ${p.lastName}`;
+                option.textContent = `${p.firstName} ${p.lastName}`;
                 datalist.appendChild(option);
             });
         }
 
         function exportToExcel() {
-            // Sort matches by date descending
             const sortedMatches = [...tournamentData.matches].sort((a, b) => 
                 new Date(b.date) - new Date(a.date)
             );
